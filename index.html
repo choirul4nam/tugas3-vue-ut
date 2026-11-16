@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SITTA - Pemesanan Bahan Ajar UT</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo-sitta.svg">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <!-- Root Vue: routing sederhana memakai state "tab" ('home' | 'stok' | 'tracking' | 'order') -->
+  <div id="app" v-cloak>
+    <p v-if="!ready" class="info" style="margin:1rem">Memuat data…</p>
+
+    <!-- Belum login: halaman login layar penuh -->
+    <login-form v-else-if="!user" @login="onLogin"></login-form>
+
+    <!-- Sudah login -->
+    <div v-else>
+      <header class="topbar">
+        <div class="topbar-inner">
+          <a class="brand" href="#" @click.prevent="pindah('home')"><img src="assets/img/logo-sitta.svg" alt="" width="34" height="34"><span>SITTA</span></a>
+          <button class="nav-toggle" type="button" aria-label="Buka menu" :aria-expanded="String(navOpen)" @click="navOpen = !navOpen">&#9776;</button>
+          <nav class="nav" :class="{ open: navOpen }" aria-label="Navigasi utama">
+            <button class="tab" :class="{ active: tab === 'home' }" @click="pindah('home')">Beranda</button>
+            <button class="tab" :class="{ active: tab === 'stok' }" @click="pindah('stok')">Informasi Bahan Ajar</button>
+            <button class="tab" :class="{ active: tab === 'tracking' }" @click="pindah('tracking')">Tracking Pengiriman</button>
+            <button class="tab" :class="{ active: tab === 'order' }" @click="pindah('order')">Pemesanan DO</button>
+            <div class="user-chip">
+              <span class="avatar" aria-hidden="true">{{ user.nama.charAt(0) }}</span>
+              <span><strong>{{ user.nama }}</strong><small>{{ user.role }}</small></span>
+              <button class="btn btn-sm btn-logout" type="button" @click="logout">Keluar</button>
+            </div>
+          </nav>
+        </div>
+      </header>
+
+      <main class="container">
+        <p v-if="notice" class="sukses">{{ notice }}</p>
+
+        <!-- BERANDA -->
+        <section v-show="tab === 'home'">
+          <div class="welcome">
+            <div>
+              <h1>{{ sapaan }}, {{ user.nama }}</h1>
+              <p>Kelola stok bahan ajar dan pantau pengiriman Delivery Order dari satu tempat.</p>
+            </div>
+            <div class="clock"><span>{{ tanggalHariIni }}</span></div>
+          </div>
+
+          <div class="stats">
+            <div class="card stat"><div class="num">{{ statistik.judul }}</div><div class="lbl">Judul bahan ajar</div></div>
+            <div class="card stat"><div class="num">{{ statistik.stok | buah }}</div><div class="lbl">Total stok</div></div>
+            <div class="card stat"><div class="num">{{ statistik.do }}</div><div class="lbl">Delivery Order tercatat</div></div>
+            <div class="card stat"><div class="num">{{ statistik.menipis }}</div><div class="lbl">Stok perlu re-order</div></div>
+          </div>
+
+          <h2 class="section-title">Menu Utama</h2>
+          <div class="menu-grid">
+            <button type="button" class="menu-card" @click="pindah('stok')">
+              <span class="menu-icon" aria-hidden="true">&#128214;</span>
+              <h3>Informasi Bahan Ajar</h3>
+              <p>Lihat, filter, dan kelola stok bahan ajar tiap UT-Daerah.</p>
+            </button>
+            <button type="button" class="menu-card" @click="pindah('tracking')">
+              <span class="menu-icon" aria-hidden="true">&#128666;</span>
+              <h3>Tracking Pengiriman</h3>
+              <p>Lacak status DO berdasarkan nomor DO atau NIM.</p>
+            </button>
+            <button type="button" class="menu-card" @click="pindah('order')">
+              <span class="menu-icon" aria-hidden="true">&#128230;</span>
+              <h3>Pemesanan DO</h3>
+              <p>Buat Delivery Order baru untuk paket bahan ajar.</p>
+            </button>
+          </div>
+        </section>
+
+        <section v-show="tab === 'stok'">
+          <div class="page-head">
+            <p class="breadcrumb"><a href="#" @click.prevent="pindah('home')">Beranda</a> / Informasi Bahan Ajar</p>
+            <h1>Informasi Stok Bahan Ajar</h1>
+            <p>Stok seluruh UT-Daerah, lengkap dengan status dan catatan.</p>
+          </div>
+          <ba-stock-table
+            :items="state.stok"
+            :upbjj-list="state.upbjjList"
+            :kategori-list="state.kategoriList"
+            @add="tambahStok"
+            @update="ubahStok"
+            @delete="hapusStok"></ba-stock-table>
+        </section>
+
+        <section v-show="tab === 'tracking'">
+          <div class="page-head">
+            <p class="breadcrumb"><a href="#" @click.prevent="pindah('home')">Beranda</a> / Tracking Pengiriman</p>
+            <h1>Tracking Pengiriman</h1>
+            <p>Cari berdasarkan nomor DO atau NIM untuk melihat status pengiriman.</p>
+          </div>
+          <do-tracking
+            :data="state.tracking"
+            :paket="state.paket"
+            :stok="state.stok"
+            @progress="tambahProgress"></do-tracking>
+        </section>
+
+        <section v-show="tab === 'order'">
+          <div class="page-head">
+            <p class="breadcrumb"><a href="#" @click.prevent="pindah('home')">Beranda</a> / Pemesanan DO</p>
+            <h1>Pemesanan Delivery Order</h1>
+            <p>Isi data mahasiswa dan pilih paket bahan ajar.</p>
+          </div>
+          <order-form
+            :paket="state.paket"
+            :ekspedisi="state.pengirimanList"
+            :stok="state.stok"
+            :next-number="nomorDOBaru"
+            @created="handleNewDO"></order-form>
+        </section>
+      </main>
+
+      <footer class="site-footer">&copy; 2026 SITTA &mdash; Tugas Praktik 3 (Vue.js Component &amp; Template) &middot; Universitas Terbuka</footer>
+    </div>
+
+    <!-- v-if="ready": template #tpl-modal baru ada setelah api.loadTemplates() selesai -->
+    <app-modal v-if="ready" ref="modal"></app-modal>
+  </div>
+
+  <!-- Template dimuat dari folder /templates oleh api.js (id: tpl-xxx), disisipkan ke #template-root -->
+  <div id="template-root" hidden></div>
+
+  <!-- Scripts (urutan penting) -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
+  <script src="js/services/api.js"></script>
+  <script src="js/components/status-badge.js"></script>
+  <script src="js/components/app-modal.js"></script>
+  <script src="js/components/login-form.js"></script>
+  <script src="js/components/stock-table.js"></script>
+  <script src="js/components/do-tracking.js"></script>
+  <script src="js/components/order-form.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

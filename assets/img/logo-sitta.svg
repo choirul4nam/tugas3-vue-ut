@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Logo SITTA">
+  <rect width="64" height="64" rx="14" fill="#0f4c81"/>
+  <path d="M14 22 32 14l18 8v4H14z" fill="#f5b800"/>
+  <rect x="18" y="29" width="6" height="14" rx="1" fill="#fff"/>
+  <rect x="29" y="29" width="6" height="14" rx="1" fill="#fff"/>
+  <rect x="40" y="29" width="6" height="14" rx="1" fill="#fff"/>
+  <rect x="13" y="46" width="38" height="5" rx="1.5" fill="#f5b800"/>
+</svg>

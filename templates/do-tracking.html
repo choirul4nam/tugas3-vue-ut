@@ -1,0 +1,76 @@
+<template id="tpl-tracking">
+  <div>
+    
+    <section class="card">
+      <h2>Lacak Delivery Order</h2>
+      <div class="baris-aksi">
+        <div style="flex:1; min-width:220px">
+          <label for="cari">Nomor DO atau NIM</label>
+          <input id="cari" v-model.trim="cari.keyword" placeholder="mis. DO2025-001 atau 123456789"
+                 @keyup.enter="cariDO" @keyup.esc="resetCari">
+        </div>
+        <button class="btn" @click="cariDO">Cari</button>
+        <button class="btn sekunder" @click="resetCari">Reset</button>
+      </div>
+      <p class="hint">Tekan Enter untuk mencari, Esc untuk mengosongkan.</p>
+      <p v-if="cari.pesan" class="err">{{ cari.pesan }}</p>
+
+      
+      <div v-if="cari.hasil.length > 1" class="baris-aksi" style="margin-top:8px">
+        <span>Ditemukan {{ cari.hasil.length }} DO:</span>
+        <button v-for="h in cari.hasil" :key="h.nomor" class="btn kecil" @click="lihat(h.nomor)">{{ h.nomor }}</button>
+      </div>
+
+      
+      <div v-if="detail" style="margin-top:12px">
+        <table class="kv">
+          <tr v-for="(nilai, label) in infoDetail" :key="label"><th>{{ label }}</th><td>{{ nilai }}</td></tr>
+          <tr><th>Status</th><td><span class="badge menipis">{{ detail.status }}</span></td></tr>
+          <tr><th>Tanggal Kirim</th><td>{{ detail.tanggalKirim | tanggalID }}</td></tr>
+          <tr><th>Total</th><td>{{ detail.total | rupiah }}</td></tr>
+        </table>
+
+        <h3>Riwayat Perjalanan</h3>
+        <ul class="timeline">
+          <li v-for="(p, i) in detail.perjalanan" :key="i">{{ p.keterangan }}<small>{{ p.waktu }}</small></li>
+        </ul>
+
+        
+        <form @submit.prevent="tambahProgress" class="baris-aksi" novalidate>
+          <div style="flex:1; min-width:220px">
+            <label>Tambah status perjalanan</label>
+            <input v-model="progress.keterangan" placeholder="mis. Tiba di Hub: SURABAYA" :class="{ invalid: progress.error }">
+            <span class="err" v-if="progress.error">{{ progress.error }}</span>
+          </div>
+          <button type="submit" class="btn">Tambah Progress</button>
+        </form>
+        <p class="hint">Waktu diambil otomatis dari jam lokal perangkat.</p>
+      </div>
+    </section>
+
+    
+    <section class="card">
+      <h2>Daftar Delivery Order ({{ daftarDO.length }})</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Nomor DO</th><th>NIM</th><th>Nama</th><th>Ekspedisi</th><th>Paket</th><th>Tgl Kirim</th><th>Status</th><th class="angka">Total</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="d in daftarDO" :key="d.nomor">
+              <td><b>{{ d.nomor }}</b></td>
+              <td>{{ d.nim }}</td>
+              <td>{{ d.nama }}</td>
+              <td>{{ d.ekspedisi }}</td>
+              <td>{{ d.paket }}</td>
+              <td>{{ d.tanggalKirim | tanggalID }}</td>
+              <td>{{ d.status }}</td>
+              <td class="angka">{{ d.total | rupiah }}</td>
+              <td><button class="btn kecil" @click="lihat(d.nomor)">Lacak</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</template>

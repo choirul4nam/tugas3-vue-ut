@@ -1,0 +1,201 @@
+<template id="tpl-stock">
+  <div>
+    <p v-if="pesan" class="info">{{ pesan }}</p>
+
+    
+    <section class="card">
+      <h2>Filter &amp; Urutkan</h2>
+      <div class="grid">
+        <div>
+          <label for="f-upbjj">UT-Daerah</label>
+          <select id="f-upbjj" v-model="filter.upbjj">
+            <option value="">Semua UT-Daerah</option>
+            <option v-for="u in upbjjList" :key="u" :value="u">{{ u }}</option>
+          </select>
+        </div>
+        
+        <div v-if="filter.upbjj">
+          <label for="f-kategori">Kategori Mata Kuliah</label>
+          <select id="f-kategori" v-model="filter.kategori">
+            <option value="">Semua Kategori</option>
+            <option v-for="k in kategoriOptions" :key="k" :value="k">{{ k }}</option>
+          </select>
+        </div>
+        <div>
+          <label for="s-by">Urutkan berdasarkan</label>
+          <select id="s-by" v-model="sort.by">
+            <option value="judul">Judul</option>
+            <option value="qty">Stok</option>
+            <option value="harga">Harga</option>
+          </select>
+        </div>
+        <div>
+          <label for="s-dir">Arah</label>
+          <select id="s-dir" v-model="sort.dir">
+            <option value="asc">Naik (A-Z / kecil-besar)</option>
+            <option value="desc">Turun (Z-A / besar-kecil)</option>
+          </select>
+        </div>
+        <label class="cek">
+          <input type="checkbox" v-model="filter.reorderOnly">
+          Perlu re-order (stok &lt; safety atau kosong)
+        </label>
+        <div class="baris-aksi">
+          <button class="btn sekunder" @click="resetFilter">Reset Filter</button>
+        </div>
+      </div>
+    </section>
+
+    
+    <section class="card">
+      <h2>Daftar Stok</h2>
+      <div class="ringkas">
+        <span>Ditampilkan: <b>{{ filteredStok.length }}</b> dari {{ items.length }} data</span>
+        <span class="badge aman">Aman: {{ ringkasan.aman }}</span>
+        <span class="badge menipis">Menipis: {{ ringkasan.menipis }}</span>
+        <span class="badge kosong">Kosong: {{ ringkasan.kosong }}</span>
+      </div>
+
+      <div v-if="filteredStok.length === 0" class="kosong-state">Tidak ada data yang sesuai dengan filter.</div>
+
+      <div v-else class="table-wrap" style="min-height:160px">
+        <table>
+          <thead>
+            <tr>
+              <th>Kode / Mata Kuliah</th><th>Kategori</th><th>UT-Daerah</th><th>Lokasi Rak</th>
+              <th class="angka">Harga</th><th class="angka">Stok</th><th class="angka">Safety</th>
+              <th>Status</th><th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, idx) in filteredStok" :key="keyOf(item)" :class="{ 'baris-kosong': item.qty === 0 }">
+              <td><b>{{ item.kode }}</b><br>{{ item.judul }}</td>
+              <td>{{ item.kategori }}</td>
+              <td>{{ item.upbjj }}</td>
+              <td>{{ item.lokasiRak }}</td>
+              <td class="angka">{{ item.harga | rupiah }}</td>
+              <td class="angka">{{ item.qty | buah }}</td>
+              <td class="angka">{{ item.safety | buah }}</td>
+              
+              <td>
+                <span class="tip-wrap" @mouseenter="hoverKey = keyOf(item)" @mouseleave="hoverKey = null">
+                  <status-badge :qty="item.qty" :safety="item.safety"></status-badge>
+                  <span class="tooltip" v-if="hoverKey === keyOf(item)">
+                    <b>Catatan</b>
+                    <span v-if="item.catatanHTML" v-html="item.catatanHTML"></span>
+                    <span v-else>(tidak ada catatan)</span>
+                  </span>
+                </span>
+              </td>
+              <td>
+                <button class="btn kecil" @click="mulaiEdit(item)">Edit</button>
+                <button class="btn kecil bahaya" @click="hapus(item)" title="Hapus">🗑 Hapus</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    
+    <section class="card" v-if="editing">
+      <h2>Edit Stok: {{ editing.kode }} – {{ editing.judul }}</h2>
+      <form @submit.prevent="simpanEdit" novalidate>
+        <div class="grid">
+          <div>
+            <label>Lokasi Rak</label>
+            <input v-model.trim="editing.lokasiRak" :class="{ invalid: editErrors.lokasiRak }">
+            <span class="err" v-if="editErrors.lokasiRak">{{ editErrors.lokasiRak }}</span>
+          </div>
+          <div>
+            <label>Harga (Rp)</label>
+            <input type="number" v-model.number="editing.harga" :class="{ invalid: editErrors.harga }">
+            <span class="err" v-if="editErrors.harga">{{ editErrors.harga }}</span>
+          </div>
+          <div>
+            <label>Jumlah Stok</label>
+            <input type="number" v-model.number="editing.qty" :class="{ invalid: editErrors.qty }">
+            <span class="err" v-if="editErrors.qty">{{ editErrors.qty }}</span>
+          </div>
+          <div>
+            <label>Safety Stock</label>
+            <input type="number" v-model.number="editing.safety" :class="{ invalid: editErrors.safety }">
+            <span class="err" v-if="editErrors.safety">{{ editErrors.safety }}</span>
+          </div>
+          <div>
+            <label>Catatan (teks)</label>
+            <input v-model="editing.catatan">
+          </div>
+        </div>
+        <div class="baris-aksi" style="margin-top:12px">
+          <button type="submit" class="btn">Simpan</button>
+          <button type="button" class="btn sekunder" @click="batalEdit">Batal</button>
+        </div>
+      </form>
+    </section>
+
+    
+    <section class="card">
+      <h2>Tambah Bahan Ajar Baru</h2>
+      <form @submit.prevent="tambah" novalidate>
+        <div class="grid">
+          <div>
+            <label>Kode Mata Kuliah</label>
+            <input v-model="form.kode" placeholder="mis. EKMA4117" :class="{ invalid: errors.kode }">
+            <span class="err" v-if="errors.kode">{{ errors.kode }}</span>
+          </div>
+          <div>
+            <label>Judul</label>
+            <input v-model.trim="form.judul" :class="{ invalid: errors.judul }">
+            <span class="err" v-if="errors.judul">{{ errors.judul }}</span>
+          </div>
+          <div>
+            <label>Kategori</label>
+            <select v-model="form.kategori" :class="{ invalid: errors.kategori }">
+              <option value="">-- pilih --</option>
+              <option v-for="k in kategoriList" :key="k" :value="k">{{ k }}</option>
+            </select>
+            <span class="err" v-if="errors.kategori">{{ errors.kategori }}</span>
+          </div>
+          <div>
+            <label>UT-Daerah</label>
+            <select v-model="form.upbjj" :class="{ invalid: errors.upbjj }">
+              <option value="">-- pilih --</option>
+              <option v-for="u in upbjjList" :key="u" :value="u">{{ u }}</option>
+            </select>
+            <span class="err" v-if="errors.upbjj">{{ errors.upbjj }}</span>
+          </div>
+          <div>
+            <label>Lokasi Rak</label>
+            <input v-model.trim="form.lokasiRak" placeholder="mis. R1-A5" :class="{ invalid: errors.lokasiRak }">
+            <span class="err" v-if="errors.lokasiRak">{{ errors.lokasiRak }}</span>
+          </div>
+          <div>
+            <label>Harga (Rp)</label>
+            <input type="number" v-model.number="form.harga" :class="{ invalid: errors.harga }">
+            <span class="err" v-if="errors.harga">{{ errors.harga }}</span>
+          </div>
+          <div>
+            <label>Jumlah Stok</label>
+            <input type="number" v-model.number="form.qty" :class="{ invalid: errors.qty }">
+            <span class="err" v-if="errors.qty">{{ errors.qty }}</span>
+          </div>
+          <div>
+            <label>Safety Stock</label>
+            <input type="number" v-model.number="form.safety" :class="{ invalid: errors.safety }">
+            <span class="err" v-if="errors.safety">{{ errors.safety }}</span>
+          </div>
+          <div>
+            <label>Catatan (opsional)</label>
+            <input v-model="form.catatan">
+          </div>
+        </div>
+        <p class="hint" v-if="formStatusPreview">Pratinjau status: {{ formStatusPreview }}</p>
+        <div class="baris-aksi" style="margin-top:12px">
+          <button type="submit" class="btn">Tambah Data</button>
+          <button type="button" class="btn sekunder" @click="resetForm">Kosongkan Form</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</template>

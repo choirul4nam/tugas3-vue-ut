@@ -1,0 +1,47 @@
+<template id="tpl-login">
+  <div class="login-page">
+    <section class="login-hero" aria-label="Tentang SITTA">
+      <div class="brand"><img src="assets/img/logo-sitta.svg" alt="" width="42" height="42"><span>SITTA</span></div>
+      <div class="hero-copy">
+        <h1>Pemesanan &amp; distribusi bahan ajar, lebih mudah.</h1>
+        <p>Sistem Informasi Tiras dan Transaksi Bahan Ajar Universitas Terbuka untuk UPBJJ-UT, Puslaba, dan Fakultas.</p>
+        <ul class="hero-points">
+          <li>Pantau stok bahan ajar secara langsung</li>
+          <li>Lacak pengiriman dengan nomor Delivery Order</li>
+          <li>Buat Delivery Order baru dalam satu form</li>
+        </ul>
+      </div>
+      <p class="hero-foot">Universitas Terbuka &middot; Program Studi Sistem Informasi</p>
+    </section>
+
+    <main class="login-panel">
+      <div class="login-card">
+        <h2>Selamat datang</h2>
+        <p class="sub">Masuk untuk mengelola bahan ajar.</p>
+
+        <form @submit.prevent="submit" novalidate>
+          <div class="field">
+            <label for="lg-user">Username <span class="req">*</span></label>
+            <input id="lg-user" class="input" :class="{ invalid: errors.username }" v-model="form.username" placeholder="mis. admin" autocomplete="username">
+            <div class="field-error">{{ errors.username }}</div>
+          </div>
+          <div class="field">
+            <label for="lg-pass">Password <span class="req">*</span></label>
+            <div class="input-group">
+              <input id="lg-pass" class="input" :class="{ invalid: errors.password }" :type="lihat ? 'text' : 'password'" v-model="form.password" placeholder="Masukkan password" autocomplete="current-password">
+              <button type="button" class="toggle-pass" @click="lihat = !lihat">{{ lihat ? 'Sembunyi' : 'Lihat' }}</button>
+            </div>
+            <div class="field-error">{{ errors.password }}</div>
+          </div>
+          <p class="err-box" v-if="pesan" role="alert">{{ pesan }}</p>
+          <button type="submit" class="btn btn-primary btn-block">Login</button>
+        </form>
+
+        <aside class="demo-box">
+          <strong>Akun demo:</strong> <code>admin</code> / <code>admin123</code><br>
+          atau <code>mahasiswa</code> / <code>ut2025</code>
+        </aside>
+      </div>
+    </main>
+  </div>
+</template>

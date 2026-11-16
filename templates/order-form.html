@@ -1,0 +1,60 @@
+<template id="tpl-order">
+  <section class="card">
+    <h2>Tambah Delivery Order Baru</h2>
+    <form @submit.prevent="simpan" novalidate>
+      <div class="grid">
+        <div>
+          <label>Nomor DO (otomatis)</label>
+          <input :value="nextNumber" readonly>
+        </div>
+        <div>
+          <label>NIM</label>
+          <input v-model="form.nim" placeholder="9-12 digit" :class="{ invalid: errors.nim }">
+          <span class="err" v-if="errors.nim">{{ errors.nim }}</span>
+        </div>
+        <div>
+          <label>Nama</label>
+          <input v-model.trim="form.nama" :class="{ invalid: errors.nama }">
+          <span class="err" v-if="errors.nama">{{ errors.nama }}</span>
+        </div>
+        <div>
+          <label>Ekspedisi</label>
+          <select v-model="form.ekspedisi" :class="{ invalid: errors.ekspedisi }">
+            <option value="">-- pilih ekspedisi --</option>
+            <option v-for="p in ekspedisi" :key="p.kode" :value="p.nama">{{ p.kode }} – {{ p.nama }}</option>
+          </select>
+          <span class="err" v-if="errors.ekspedisi">{{ errors.ekspedisi }}</span>
+        </div>
+        <div>
+          <label>Paket Bahan Ajar</label>
+          <select v-model="form.paket" :class="{ invalid: errors.paket }">
+            <option value="">-- pilih paket --</option>
+            <option v-for="p in paket" :key="p.kode" :value="p.kode">{{ p.kode }} – {{ p.nama }}</option>
+          </select>
+          <span class="err" v-if="errors.paket">{{ errors.paket }}</span>
+        </div>
+        <div>
+          <label>Tanggal Kirim</label>
+          <input type="date" v-model="form.tanggalKirim" :class="{ invalid: errors.tanggalKirim }">
+          <span class="hint" v-if="form.tanggalKirim">{{ form.tanggalKirim | tanggalID }}</span>
+          <span class="err" v-if="errors.tanggalKirim">{{ errors.tanggalKirim }}</span>
+        </div>
+      </div>
+
+      
+      <div v-if="paketTerpilih" class="info" style="margin-top:12px">
+        <b>{{ paketTerpilih.kode }} – {{ paketTerpilih.nama }}</b>
+        <ul style="margin:6px 0 0">
+          <li v-for="m in isiPaketDetail" :key="m.kode">{{ m.kode }} – {{ m.judul }} ({{ m.harga | rupiah }})</li>
+        </ul>
+      </div>
+
+      <p style="margin-top:12px"><b>Total Harga: </b>{{ totalHarga | rupiah }}</p>
+
+      <div class="baris-aksi">
+        <button type="submit" class="btn">Simpan DO</button>
+        <button type="button" class="btn sekunder" @click="resetForm">Reset</button>
+      </div>
+    </form>
+  </section>
+</template>

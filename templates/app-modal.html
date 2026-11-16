@@ -1,0 +1,12 @@
+<template id="tpl-modal">
+  <div class="modal-bg" v-if="show" @click.self="close(false)" @keyup.esc="close(false)">
+    <div class="modal-box" role="dialog" aria-modal="true">
+      <h3>{{ title }}</h3>
+      <p>{{ message }}</p>
+      <div class="baris-aksi">
+        <button class="btn sekunder" @click="close(false)">{{ cancelText }}</button>
+        <button class="btn" :class="danger ? 'btn-danger bahaya' : 'btn-primary'" @click="close(true)">{{ okText }}</button>
+      </div>
+    </div>
+  </div>
+</template>
